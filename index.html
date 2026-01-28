@@ -231,11 +231,11 @@
               <div class="v" id="normalCount">0</div>
             </div>
             <div class="stat">
-              <div class="k">ปลา A 🐡 (2/10)</div>
+              <div class="k">ปลาเงิน 🐟 (2/10)</div>
               <div class="v" id="fishACount">0</div>
             </div>
             <div class="stat">
-              <div class="k">ปลา B 🐬 (3/10)</div>
+              <div class="k">ปลาทองแดง 🐠 (3/10)</div>
               <div class="v" id="fishBCount">0</div>
             </div>
             <div class="stat">
@@ -286,8 +286,11 @@
       <div class="qtext" id="quizQuestion">...</div>
       <div class="choices" id="quizChoices"></div>
       <div class="foot">
-        <div id="quizHint">ตอบถูก = +1 คะแนน | ตอบผิด = 0</div>
-        <div id="quizResult"></div>
+        <div id="quizHint">⏱️ เหลือเวลา: <b id="quizTime">45</b> วิ | ตอบถูก = +1 | ตอบผิด/หมดเวลา/ข้าม = 0</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="skipBtn" class="choiceBtn" style="padding:10px 12px;">Skip</button>
+          <div id="quizResult"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -332,6 +335,8 @@
   const quizQuestion = document.getElementById('quizQuestion');
   const quizChoices = document.getElementById('quizChoices');
   const quizResult = document.getElementById('quizResult');
+  const quizTimeEl = document.getElementById('quizTime');
+  const skipBtn = document.getElementById('skipBtn');
 
   function log(msg){
     logEl.textContent = msg + "\n" + logEl.textContent.split("\n").slice(0,5).join("\n");
@@ -430,11 +435,11 @@
   }
 
   function fishLabel(type){
-    if (type === "gold") return "ปลาทอง 🐠";
-    if (type === "fishA") return "ปลา A 🐡";
-    if (type === "fishB") return "ปลา B 🐬";
-    return "ปลาธรรมดา 🐟";
-  }
+  if (type === "gold") return "ปลาทอง 🐠";
+  if (type === "fishA") return "ปลาเงิน 🐟";
+  if (type === "fishB") return "ปลาทองแดง 🐠";
+  return "ปลาธรรมดา 🐟";
+}
 
   // ===== Quiz bank (probability, easy) =====
   const QUIZ = {
@@ -469,58 +474,132 @@
   }
 
   function showQuiz(type){
-    setState(ST.QUIZ);
+    let quizTimer = null;
+let quizTimeLeft = 45;
 
-    const diff = pickDifficulty(type);
-    const pool = QUIZ[diff];
-    const item = pool[Math.floor(Math.random() * pool.length)];
-
-    quizBadge.textContent = `${fishLabel(type)} • ระดับ: ${diff === "easy" ? "ง่าย" : diff === "medium" ? "กลาง" : "ยาก"}`;
-    quizTitle.textContent = "ตอบคำถามความน่าจะเป็นเพื่อรับ +1 คะแนน";
-    quizQuestion.textContent = item.q;
-    quizResult.textContent = "";
-
-    quizChoices.innerHTML = "";
-    item.opts.forEach((opt, idx) => {
-      const b = document.createElement("button");
-      b.className = "choiceBtn";
-      b.textContent = `${String.fromCharCode(65+idx)}. ${opt}`;
-      b.onclick = () => {
-        // lock choices
-        [...quizChoices.querySelectorAll("button")].forEach(x => x.disabled = true);
-
-        const correct = (idx === item.a);
-        if (correct){
-          score += 1;
-          quizResult.textContent = "✅ ถูกต้อง! +1 คะแนน";
-          log(`✅ ตอบถูก! ได้ 1 คะแนน (ตอนจับ ${fishLabel(type)})`);
-        } else {
-          quizResult.textContent = "❌ ไม่ถูก ได้ 0 คะแนน";
-          log(`❌ ตอบผิด (ตอนจับ ${fishLabel(type)})`);
-        }
-
-        updateUI();
-
-        // win?
-        if (score >= 5){
-          setTimeout(() => {
-            showWin();
-          }, 550);
-          return;
-        }
-
-        // close quiz and allow next cast
-        setTimeout(() => {
-          quizOverlay.classList.remove("show");
-          setState(ST.IDLE);
-          log("🎯 พร้อมแล้ว กด Cast เพื่อตกปลาอีกรอบ");
-        }, 650);
-      };
-      quizChoices.appendChild(b);
-    });
-
-    quizOverlay.classList.add("show");
+function stopQuizTimer(){
+  if (quizTimer) {
+    clearInterval(quizTimer);
+    quizTimer = null;
   }
+}
+
+function lockQuizChoices(){
+  [...quizChoices.querySelectorAll("button")].forEach(x => x.disabled = true);
+  skipBtn.disabled = true;
+}
+
+function closeQuizToIdle(){
+  quizOverlay.classList.remove("show");
+  setState(ST.IDLE);
+  log("🎯 พร้อมแล้ว กด Cast เพื่อตกปลาอีกรอบ");
+}
+
+let quizTimer = null;
+let quizTimeLeft = 45;
+
+function stopQuizTimer(){
+  if (quizTimer) {
+    clearInterval(quizTimer);
+    quizTimer = null;
+  }
+}
+
+function lockQuizChoices(){
+  [...quizChoices.querySelectorAll("button")].forEach(x => x.disabled = true);
+  skipBtn.disabled = true;
+}
+
+function closeQuizToIdle(){
+  quizOverlay.classList.remove("show");
+  setState(ST.IDLE);
+  log("🎯 พร้อมแล้ว กด Cast เพื่อตกปลาอีกรอบ");
+}
+
+function showQuiz(type){
+  setState(ST.QUIZ);
+
+  const diff = pickDifficulty(type);
+  const pool = QUIZ[diff];
+  const item = pool[Math.floor(Math.random() * pool.length)];
+
+  quizBadge.textContent = `${fishLabel(type)} • ระดับ: ${diff === "easy" ? "ง่าย" : diff === "medium" ? "กลาง" : "ยาก"}`;
+  quizTitle.textContent = "ตอบคำถามความน่าจะเป็นเพื่อรับ +1 คะแนน";
+  quizQuestion.textContent = item.q;
+  quizResult.textContent = "";
+
+  // Reset timer
+  stopQuizTimer();
+  quizTimeLeft = 45;
+  quizTimeEl.textContent = quizTimeLeft;
+
+  // Build choices
+  quizChoices.innerHTML = "";
+  item.opts.forEach((opt, idx) => {
+    const b = document.createElement("button");
+    b.className = "choiceBtn";
+    b.textContent = `${String.fromCharCode(65+idx)}. ${opt}`;
+    b.onclick = () => {
+      lockQuizChoices();
+      stopQuizTimer();
+
+      const correct = (idx === item.a);
+      if (correct){
+        score += 1;
+        quizResult.textContent = "✅ ถูกต้อง! +1 คะแนน";
+        log(`✅ ตอบถูก! ได้ 1 คะแนน (ตอนจับ ${fishLabel(type)})`);
+      } else {
+        quizResult.textContent = "❌ ไม่ถูก ได้ 0 คะแนน";
+        log(`❌ ตอบผิด (ตอนจับ ${fishLabel(type)})`);
+      }
+
+      updateUI();
+
+      if (score >= 5){
+        setTimeout(() => showWin(), 450);
+        return;
+      }
+
+      setTimeout(() => closeQuizToIdle(), 650);
+    };
+    quizChoices.appendChild(b);
+  });
+
+  // Skip button
+  skipBtn.disabled = false;
+  skipBtn.onclick = () => {
+    lockQuizChoices();
+    stopQuizTimer();
+    quizResult.textContent = "⏭️ ข้ามคำถาม ได้ 0 คะแนน";
+    log(`⏭️ ข้ามคำถาม (ตอนจับ ${fishLabel(type)})`);
+    updateUI();
+
+    if (score >= 5){
+      setTimeout(() => showWin(), 450);
+      return;
+    }
+    setTimeout(() => closeQuizToIdle(), 650);
+  };
+
+  // Start countdown
+  quizTimer = setInterval(() => {
+    quizTimeLeft -= 1;
+    quizTimeEl.textContent = quizTimeLeft;
+
+    if (quizTimeLeft <= 0){
+      lockQuizChoices();
+      stopQuizTimer();
+      quizResult.textContent = "⏱️ หมดเวลา ได้ 0 คะแนน";
+      log(`⏱️ หมดเวลา (ตอนจับ ${fishLabel(type)})`);
+      updateUI();
+
+      setTimeout(() => closeQuizToIdle(), 650);
+    }
+  }, 1000);
+
+  quizOverlay.classList.add("show");
+}
+
 
   function showWin(){
     setState(ST.WIN);
@@ -612,7 +691,7 @@
     tension = 0;
     updateTensionUI();
     updateUI();
-
+    stopQuizTimer();
     quizOverlay.classList.remove("show");
     setState(ST.IDLE);
   }
@@ -849,11 +928,18 @@
 
       // SLOWER & easier tension dynamics (มือถือกดทัน)
       const relax = 0.0019;
-      tension += fishPull * dt * 0.6;
-      tension += (reelHeld ? 0.0009 : 0.0002) * dt;
-      tension -= relax * dt * 1.3;
+      // ช้าลง + นุ่มขึ้น
+      tension += fishPull * dt * 0.45;                 // ปลาเพิ่มแรงตึงช้าลง
+      tension += (reelHeld ? 0.00055 : 0.00015) * dt;  // กด Reel แล้วหลอดขึ้นช้าลง
+      tension -= relax * dt * 1.55;                    // คลายเร็วขึ้น
 
-      tension = Math.max(0, Math.min(1.15, tension));
+      const reelLift = reelHeld ? 0.0026 : 0.0009;     // ยกเบ็ดช้าลง (คุมง่ายขึ้น)
+
+      // สายทนขึ้นนิดนึง
+      if (tension >= 0.965){
+      breakLine();
+      }
+
 
       if (hookedFish){
         hookedFish.bob += dt/500;
