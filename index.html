@@ -473,28 +473,6 @@
     return "easy";                           // ง่าย
   }
 
-  function showQuiz(type){
-    let quizTimer = null;
-let quizTimeLeft = 45;
-
-function stopQuizTimer(){
-  if (quizTimer) {
-    clearInterval(quizTimer);
-    quizTimer = null;
-  }
-}
-
-function lockQuizChoices(){
-  [...quizChoices.querySelectorAll("button")].forEach(x => x.disabled = true);
-  skipBtn.disabled = true;
-}
-
-function closeQuizToIdle(){
-  quizOverlay.classList.remove("show");
-  setState(ST.IDLE);
-  log("🎯 พร้อมแล้ว กด Cast เพื่อตกปลาอีกรอบ");
-}
-
 let quizTimer = null;
 let quizTimeLeft = 45;
 
@@ -559,7 +537,6 @@ function showQuiz(type){
         setTimeout(() => showWin(), 450);
         return;
       }
-
       setTimeout(() => closeQuizToIdle(), 650);
     };
     quizChoices.appendChild(b);
@@ -592,7 +569,6 @@ function showQuiz(type){
       quizResult.textContent = "⏱️ หมดเวลา ได้ 0 คะแนน";
       log(`⏱️ หมดเวลา (ตอนจับ ${fishLabel(type)})`);
       updateUI();
-
       setTimeout(() => closeQuizToIdle(), 650);
     }
   }, 1000);
@@ -600,22 +576,6 @@ function showQuiz(type){
   quizOverlay.classList.add("show");
 }
 
-
-  function showWin(){
-    setState(ST.WIN);
-    quizBadge.textContent = "🎉 ชนะแล้ว!";
-    quizTitle.textContent = "คุณชนะเกม!";
-    quizQuestion.innerHTML = `<div class="winTitle">คะแนนถึง 5 แล้ว ✅</div>อยากเล่นใหม่กด Reset ได้เลย`;
-    quizChoices.innerHTML = "";
-    const b = document.createElement("button");
-    b.className = "choiceBtn";
-    b.textContent = "↻ Reset (เริ่มใหม่)";
-    b.onclick = () => resetGame();
-    quizChoices.appendChild(b);
-    quizResult.textContent = "";
-    quizOverlay.classList.add("show");
-    log("🏆 ชนะแล้ว! กด Reset เพื่อเริ่มใหม่");
-  }
 
   // ===== Spawn background fish visuals =====
   function spawnFish(){
@@ -850,7 +810,7 @@ function showQuiz(type){
     ctx.fillText("ชนะที่ 5 คะแนน (ตอบคำถามถูก)", 14, 24);
 
     ctx.fillStyle = "rgba(255,255,255,0.75)";
-    ctx.fillText("ปลา: ทอง 1/10 • A 2/10 • B 3/10 • ธรรมดา 4/10", 14, 46);
+    ctx.fillText("ปลา: ปลาทอง 1/10 • ปลาเงิน 2/10 • ปลาทองแดง 3/10 • ปลาธรรมดา 4/10", 14, 46);
 
     if (state === ST.HOOKED){
       ctx.fillStyle = "rgba(255,255,255,0.9)";
@@ -953,20 +913,15 @@ function showQuiz(type){
       }
 
       // reeling lifts hook
-      const reelLift = reelHeld ? 0.0036 : 0.0012;
       if (reelHeld){
         hook.y -= reelLift * dt * (1.0 - tension*0.35);
       } else {
         hook.y += 0.0009 * dt;
       }
+
       hook.y = Math.max(rod.y - 5, Math.min(canvas.height-30, hook.y));
 
       // break threshold (ผ่อนปรนขึ้น)
-      if (tension >= 0.95){
-        breakLine();
-      } else if (hook.y <= rod.y + 10 || hook.y <= waterLine() + 60){
-        landed();
-      }
 
       updateTensionUI();
     }
