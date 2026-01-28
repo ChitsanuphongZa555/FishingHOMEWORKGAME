@@ -55,7 +55,9 @@
       border:1px solid var(--border);
       background: linear-gradient(180deg, #001629 0%, #043a61 50%, #0a78b8 100%);
       display:block;
-      touch-action:none;
+
+      /* ✅ FIX: อย่าใช้ none เพราะจะแย่งทัชจนปุ่มกดไม่ติดในมือถือ */
+      touch-action: manipulation;
     }
     .side{padding:12px}
     .stats{
@@ -91,6 +93,10 @@
       font-weight:800;
       cursor:pointer;
       user-select:none;
+
+      /* ✅ กัน iOS กดแล้วเลือกข้อความ / delay */
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     button.primary{ background: var(--btn2); border-color: #3b82f650; }
     button.danger{ background: rgba(251,113,133,.12); border-color: rgba(251,113,133,.4); }
@@ -174,6 +180,8 @@
       border-radius:14px;
       padding:12px;
       font-weight:800;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     .choiceBtn:active{ transform: translateY(1px); }
     .modal .foot{
@@ -295,14 +303,14 @@
   const ctx = canvas.getContext('2d');
 
   function fitCanvas() {
-    const cssW = canvas.clientWidth;
+    const cssW = canvas.clientWidth || 900;
     const ratio = window.devicePixelRatio || 1;
     const targetW = Math.floor(cssW * ratio);
     const targetH = Math.floor((cssW * (520/900)) * ratio);
     canvas.width = targetW;
     canvas.height = targetH;
   }
-  window.addEventListener('resize', () => { fitCanvas(); });
+  window.addEventListener('resize', fitCanvas);
   fitCanvas();
 
   // ===== UI =====
@@ -366,8 +374,8 @@
 
   // Hooking mechanics
   let hookedFish = null;
-  let targetType = null;     // "normal" | "fishA" | "fishB" | "gold"
-  let tension = 0;           // 0..1
+  let targetType = null;
+  let tension = 0;   // 0..1+
   let waitTimer = 0;
   let castTimer = 0;
   let fishPull = 0;
@@ -389,7 +397,6 @@
     };
     stateText.textContent = map[s] || ("สถานะ: " + s);
 
-    // buttons
     if (s === ST.IDLE){
       castBtn.disabled = false;
       reelBtn.disabled = true;
@@ -417,14 +424,19 @@
     totalEl.textContent = totalCount;
   }
 
+  function updateTensionUI(){
+    const pct = Math.max(0, Math.min(1, tension));
+    tensionFill.style.width = Math.round(pct*100) + "%";
+    tensionLabel.textContent = Math.round(pct*100) + "%";
+  }
+
   // ===== Probability roll (10 parts) =====
-  // gold 1/10, fishA 2/10, fishB 3/10, normal 4/10
   function rollFishType(){
-    const r = Math.floor(Math.random() * 10) + 1; // 1..10
-    if (r === 10) return "gold";                 // 1/10
-    if (r === 8 || r === 9) return "fishA";      // 2/10
-    if (r === 5 || r === 6 || r === 7) return "fishB"; // 3/10
-    return "normal";                              // 4/10
+    const r = Math.floor(Math.random() * 10) + 1;
+    if (r === 10) return "gold";
+    if (r === 8 || r === 9) return "fishA";
+    if (r === 5 || r === 6 || r === 7) return "fishB";
+    return "normal";
   }
 
   function fishLabel(type){
@@ -466,7 +478,7 @@
     return "easy";
   }
 
-  // ===== Quiz timer (GLOBAL) =====
+  // ===== Quiz timer =====
   let quizTimer = null;
   let quizTimeLeft = 45;
 
@@ -624,21 +636,33 @@
     waitTimer = 750 + Math.random()*1250;
   }
 
-  // ===== Reel controls =====
-  function setReelHeld(on){ reelHeld = on; }
-  reelBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); if(!reelBtn.disabled) setReelHeld(true); });
-  reelBtn.addEventListener('pointerup',   (e) => { e.preventDefault(); setReelHeld(false); });
-  reelBtn.addEventListener('pointercancel',(e)=> { e.preventDefault(); setReelHeld(false); });
-  reelBtn.addEventListener('pointerleave',(e)=> { e.preventDefault(); setReelHeld(false); });
+  // ===== ✅ FIX REEL: มือถือกดติดแน่นอน (touch + mouse) =====
+  function reelOn(){
+    if (!reelBtn.disabled) reelHeld = true;
+  }
+  function reelOff(){
+    reelHeld = false;
+  }
 
+  // touch (มือถือ)
+  reelBtn.addEventListener("touchstart", (e) => { e.preventDefault(); reelOn(); }, { passive:false });
+  reelBtn.addEventListener("touchend",   (e) => { e.preventDefault(); reelOff(); });
+  reelBtn.addEventListener("touchcancel", reelOff);
+
+  // mouse (คอม)
+  reelBtn.addEventListener("mousedown", reelOn);
+  reelBtn.addEventListener("mouseup", reelOff);
+  reelBtn.addEventListener("mouseleave", reelOff);
+
+  // คีย์บอร์ด
   window.addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
     if (k === 'c') cast();
-    if (k === 'r' && state === ST.HOOKED) setReelHeld(true);
+    if (k === 'r' && state === ST.HOOKED) reelOn();
   });
   window.addEventListener('keyup', (e) => {
     const k = e.key.toLowerCase();
-    if (k === 'r') setReelHeld(false);
+    if (k === 'r') reelOff();
   });
 
   castBtn.addEventListener('click', cast);
@@ -685,12 +709,6 @@
     log("💥 สายขาด! ลองใหม่ (คุม Reel ให้พอดี)");
     tension = 0;
     updateTensionUI();
-  }
-
-  function updateTensionUI(){
-    const pct = Math.max(0, Math.min(1, tension));
-    tensionFill.style.width = Math.round(pct*100) + "%";
-    tensionLabel.textContent = Math.round(pct*100) + "%";
   }
 
   // ===== Drawing =====
@@ -836,7 +854,6 @@
       f.x += f.dir * f.speed * (dt/5);
     }
 
-    // pause logic during quiz/win
     if (state === ST.QUIZ || state === ST.WIN){
       ctx.clearRect(0,0,canvas.width,canvas.height);
       drawSea();
@@ -882,24 +899,26 @@
       }
     }
     else if (state === ST.HOOKED){
-      // ===== FIXED HOOKED LOGIC (NO DUPLICATE) =====
+      // ===== ✅ ปรับให้ "สายแน่นขึ้น แต่ไม่พุ่งเร็ว" =====
+      // - tension ขึ้นจากปลา "ช้าลง"
+      // - กด Reel แล้ว tension เพิ่ม "ช้าลง"
+      // - คลายเร็วขึ้นนิด ให้เล่นคุมได้
+
       const pullBase = (targetType === "gold") ? 0.0022 : (targetType === "fishB") ? 0.0020 : 0.0018;
       const pullVar  = (targetType === "gold") ? 0.0029 : (targetType === "fishB") ? 0.0026 : 0.0024;
       fishPull = (Math.sin(now/220) * 0.5 + 0.5) * pullVar + pullBase;
 
       const relax = 0.00055;
-      // 🔽 แรงปลาลดลง (ไม่พุ่งทันที)
-      tension += fishPull * dt * 0.38;
 
-      // 🔽 Reel ขึ้นช้าลงมาก
-      tension += (reelHeld ? 0.00028 : 0.00006) * dt;
+      // ✅ ช้าลง (เดิมคุณบอกขึ้นเร็วมากกดไม่ทัน)
+      tension += fishPull * dt * 0.34;                 // ขึ้นจากปลา (ช้าลง)
+      tension += (reelHeld ? 0.00023 : 0.00005) * dt;  // ขึ้นจากการกด reel (ช้าลง)
+      tension -= relax * dt * 1.20;                    // คลายเพิ่มนิด
 
-      // 🔼 คลายเร็วขึ้นนิด (กันหลอดค้างสูง)
-      tension -= relax * dt * 1.15;
-
-
+      // clamp
       tension = Math.max(0, Math.min(1.2, tension));
 
+      // fish behavior
       if (hookedFish){
         hookedFish.bob += dt/500;
         hookedFish.x += (targetType === "gold" ? 0.6 : 0.5) * (dt/5);
@@ -911,14 +930,16 @@
         hookedFish.y = Math.max(waterLine()+40, Math.min(canvas.height-40, hookedFish.y));
       }
 
-      const reelLift = reelHeld ? 0.0019 : 0.0006;
+      // ✅ ยกเบ็ด: ให้ "เหนียวขึ้น" แต่คุมได้ (ไม่กระชาก)
+      const reelLift = reelHeld ? 0.00155 : 0.00055;
       if (reelHeld){
-        hook.y -= reelLift * dt * (1.0 - tension*0.35);
+        hook.y -= reelLift * dt * (1.0 - tension*0.30);
       } else {
-        hook.y += 0.0008 * dt;
+        hook.y += 0.00075 * dt;
       }
       hook.y = Math.max(rod.y - 5, Math.min(canvas.height-30, hook.y));
 
+      // จบเกมเพลย์
       if (tension >= 0.97){
         breakLine();
       } else if (hook.y <= rod.y + 10 || hook.y <= waterLine() + 60){
