@@ -888,9 +888,15 @@
       fishPull = (Math.sin(now/220) * 0.5 + 0.5) * pullVar + pullBase;
 
       const relax = 0.00055;
-      tension += fishPull * dt * 0.90;
-      tension += (reelHeld ? 0.00085 : 0.00022) * dt;
-      tension -= relax * dt;
+      // 🔽 แรงปลาลดลง (ไม่พุ่งทันที)
+      tension += fishPull * dt * 0.38;
+
+      // 🔽 Reel ขึ้นช้าลงมาก
+      tension += (reelHeld ? 0.00028 : 0.00006) * dt;
+
+      // 🔼 คลายเร็วขึ้นนิด (กันหลอดค้างสูง)
+      tension -= relax * dt * 1.15;
+
 
       tension = Math.max(0, Math.min(1.2, tension));
 
