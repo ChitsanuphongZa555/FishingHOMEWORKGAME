@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>🎣 Fishing (Normal & Gold)</title>
+  <style>
+    :root{
+      --bg:#071427;
+      --panel:#0b1d3a;
+      --text:#eaf2ff;
+      --muted:#9db3d6;
+      --good:#4ade80;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --btn:#ffffff10;
+      --btn2:#3b82f620;
+      --border:#ffffff15;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans Thai", sans-serif;
+      background: radial-gradient(1200px 600px at 50% -20%, #1b4aa8 0%, var(--bg) 55%);
+      color:var(--text);
+      padding:12px;
+      display:flex;
+      justify-content:center;
+    }
+    .wrap{width:min(980px,100%)}
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:10px;
+    }
+    h1{margin:0; font-size:18px}
+    .sub{color:var(--muted); font-size:12px; line-height:1.3}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap:10px;
+    }
+    @media (max-width: 860px){ .grid{grid-template-columns:1fr} }
+    .card{
+      background: linear-gradient(180deg, rgba(11,29,58,.92), rgba(7,20,39,.92));
+      border:1px solid var(--border);
+      border-radius:14px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    .canvasBox{padding:10px}
+    canvas{
+      width:100%;
+      height:auto;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, #001629 0%, #043a61 50%, #0a78b8 100%);
+      display:block;
+      touch-action:none;
+    }
+    .side{padding:12px}
+    .stats{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .stat{
+      background: rgba(255,255,255,.05);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+    }
+    .k{font-size:12px; color:var(--muted)}
+    .v{font-size:18px; font-weight:800; margin-top:4px}
+    .panel{
+      background: rgba(255,255,255,.05);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      margin-bottom:10px;
+    }
+    .row{display:flex; justify-content:space-between; align-items:center; gap:10px}
+    .btns{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    button{
+      appearance:none;
+      border:1px solid var(--border);
+      background: var(--btn);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:800;
+      cursor:pointer;
+      user-select:none;
+    }
+    button.primary{ background: var(--btn2); border-color: #3b82f650; }
+    button.danger{ background: rgba(251,113,133,.12); border-color: rgba(251,113,133,.4); }
+    button:disabled{ opacity:.45; cursor:not-allowed; }
+    .meter{
+      margin-top:8px;
+      height:12px;
+      background: rgba(255,255,255,.08);
+      border:1px solid var(--border);
+      border-radius:999px;
+      overflow:hidden;
+    }
+    .fill{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, var(--good), var(--warn), var(--bad));
+      transition: width .08s linear;
+    }
+    .log{
+      font-size:12px;
+      color:var(--muted);
+      min-height:56px;
+      white-space:pre-line;
+      line-height:1.35;
+    }
+    .hint{font-size:12px; color:var(--muted); margin-top:8px}
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
+      background: rgba(255,255,255,.08);
+      border:1px solid var(--border);
+      padding:2px 6px;
+      border-radius:8px;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>🎣 Fishing: ปลาธรรมดา vs ปลาทอง</h1>
+        <div class="sub">
+          โอกาสได้ปลาทอง = <b>1/10</b> | คีย์ลัด: <span class="kbd">C</span> Cast, <span class="kbd">R</span> Reel (ค้างได้)
+        </div>
+      </div>
+      <div class="sub" id="stateText">สถานะ: พร้อมตกปลา</div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div class="canvasBox">
+          <canvas id="game" width="900" height="520" aria-label="Fishing Game Canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="side">
+          <div class="stats">
+            <div class="stat">
+              <div class="k">คะแนน</div>
+              <div class="v" id="score">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">คอมโบ (จับติดกัน)</div>
+              <div class="v" id="combo">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">ปลาธรรมดา 🐟</div>
+              <div class="v" id="normalCount">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">ปลาทอง 🐠</div>
+              <div class="v" id="goldCount">0</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="row">
+              <div>
+                <div class="k">แรงตึงสาย</div>
+                <div class="sub">ดึงแรงเกิน = สายขาด</div>
+              </div>
+              <div style="font-weight:900" id="tensionLabel">0%</div>
+            </div>
+            <div class="meter"><div class="fill" id="tensionFill"></div></div>
+
+            <div class="btns">
+              <button class="primary" id="castBtn">🎯 Cast</button>
+              <button class="primary" id="reelBtn" disabled>🌀 Reel</button>
+              <button class="danger" id="resetBtn">↻ Reset</button>
+            </div>
+
+            <div class="hint">
+              เคล็ดลับ: ตอนติดปลาแล้ว ให้กด Reel “พอดี ๆ” เพื่อไม่ให้ tension เกิน ~85%
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="k">บันทึก</div>
+            <div class="log" id="log">- กด Cast เพื่อเริ่ม</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ===== Canvas setup =====
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  // Scale crisp on high DPI
+  function fitCanvas() {
+    const cssW = canvas.clientWidth;
+    const ratio = window.devicePixelRatio || 1;
+    const targetW = Math.floor(cssW * ratio);
+    const targetH = Math.floor((cssW * (520/900)) * ratio);
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
+  window.addEventListener('resize', () => { fitCanvas(); });
+  fitCanvas();
+
+  // ===== UI elements =====
+  const castBtn = document.getElementById('castBtn');
+  const reelBtn = document.getElementById('reelBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const scoreEl = document.getElementById('score');
+  const comboEl = document.getElementById('combo');
+  const normalEl = document.getElementById('normalCount');
+  const goldEl = document.getElementById('goldCount');
+  const logEl = document.getElementById('log');
+  const stateText = document.getElementById('stateText');
+  const tensionFill = document.getElementById('tensionFill');
+  const tensionLabel = document.getElementById('tensionLabel');
+
+  function log(msg){
+    logEl.textContent = msg + "\n" + logEl.textContent.split("\n").slice(0,4).join("\n");
+  }
+
+  // ===== Game state =====
+  const ST = {
+    IDLE: "IDLE",
+    CASTING: "CASTING",
+    WAITING: "WAITING",
+    HOOKED: "HOOKED",
+    LANDED: "LANDED",
+    BROKE: "BROKE",
+  };
+
+  let state = ST.IDLE;
+
+  let score = 0;
+  let combo = 0;
+  let normalCount = 0;
+  let goldCount = 0;
+
+  // Rod & hook
+  const rod = { x: 130, y: 110 };
+  let hook = { x: 220, y: 160, vy: 0 };
+  let lineLen = 80;
+
+  // Fish data
+  const fishes = [];
+  const waterLine = () => canvas.height * 0.28;
+
+  // Hooking & reel mechanics
+  let hookedFish = null;
+  let targetType = null;     // "normal" or "gold"
+  let tension = 0;           // 0..1
+  let reelPower = 0;         // 0..1 (set by user)
+  let fishStamina = 0;       // 0..1 (lower => easier)
+  let fishPull = 0;          // fish random pull
+  let waitTimer = 0;
+  let castTimer = 0;
+
+  function setState(s){
+    state = s;
+    const map = {
+      IDLE: "สถานะ: พร้อมตกปลา",
+      CASTING: "สถานะ: เหวี่ยงเบ็ด…",
+      WAITING: "สถานะ: รอปลากินเหยื่อ…",
+      HOOKED: "สถานะ: ติดปลาแล้ว! Reel!",
+      LANDED: "สถานะ: จับได้! กด Cast อีกรอบ",
+      BROKE: "สถานะ: สายขาด… กด Cast ใหม่",
+    };
+    stateText.textContent = map[s] || ("สถานะ: " + s);
+
+    // Button logic
+    if (s === ST.IDLE){
+      castBtn.disabled = false;
+      reelBtn.disabled = true;
+    } else if (s === ST.CASTING || s === ST.WAITING){
+      castBtn.disabled = true;
+      reelBtn.disabled = true;
+    } else if (s === ST.HOOKED){
+      castBtn.disabled = true;
+      reelBtn.disabled = false;
+    } else if (s === ST.LANDED || s === ST.BROKE){
+      castBtn.disabled = false;
+      reelBtn.disabled = true;
+    }
+  }
+
+  // ===== Probability: gold 1/10 =====
+  function rollFishType(){
+    // 1..10, 10 is gold => 1/10
+    const r = Math.floor(Math.random() * 10) + 1;
+    return (r === 10) ? "gold" : "normal";
+  }
+
+  // ===== Spawn background fish =====
+  function spawnFish(){
+    const type = (Math.random() < 0.12) ? "gold" : "normal"; // background only (visual)
+    const y = waterLine() + canvas.height * (0.18 + Math.random()*0.62);
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    const speed = (type === "gold" ? 0.9 : 1.1) * (0.8 + Math.random()*1.2);
+    fishes.push({
+      type,
+      x: dir === 1 ? -80 : canvas.width + 80,
+      y,
+      dir,
+      speed,
+      bob: Math.random()*Math.PI*2,
+      size: type === "gold" ? 22 : 20
+    });
+    if (fishes.length > 14) fishes.shift();
+  }
+
+  // ===== Start cast =====
+  function cast(){
+    if (!(state === ST.IDLE || state === ST.LANDED || state === ST.BROKE)) return;
+
+    // reset hook
+    hook.x = rod.x + 80;
+    hook.y = rod.y + 30;
+    hook.vy = 0;
+    lineLen = 80;
+
+    hookedFish = null;
+    targetType = null;
+    tension = 0;
+    reelPower = 0;
+    fishPull = 0;
+
+    setState(ST.CASTING);
+    castTimer = 0;
+    log("🎯 เหวี่ยงเบ็ด!");
+
+    // decide target fish type now (the catch type)
+    targetType = rollFishType(); // normal 9/10, gold 1/10
+
+    // waiting time until bite (short random)
+    waitTimer = 800 + Math.random()*1400;
+
+    // set fish stamina (gold tougher slightly)
+    fishStamina = targetType === "gold" ? 1.0 : 0.85;
+  }
+
+  // ===== Reel controls =====
+  let reelHeld = false;
+
+  function setReelHeld(on){
+    reelHeld = on;
+    reelPower = on ? 1 : 0;
+  }
+
+  reelBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); if(!reelBtn.disabled) setReelHeld(true); });
+  reelBtn.addEventListener('pointerup',   (e) => { e.preventDefault(); setReelHeld(false); });
+  reelBtn.addEventListener('pointercancel',(e)=> { e.preventDefault(); setReelHeld(false); });
+  reelBtn.addEventListener('pointerleave',(e)=> { e.preventDefault(); setReelHeld(false); });
+
+  // Keyboard
+  window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if (k === 'c') cast();
+    if (k === 'r' && state === ST.HOOKED) setReelHeld(true);
+  });
+  window.addEventListener('keyup', (e) => {
+    const k = e.key.toLowerCase();
+    if (k === 'r') setReelHeld(false);
+  });
+
+  castBtn.addEventListener('click', cast);
+  resetBtn.addEventListener('click', () => {
+    score = 0; combo = 0; normalCount = 0; goldCount = 0;
+    scoreEl.textContent = score;
+    comboEl.textContent = combo;
+    normalEl.textContent = normalCount;
+    goldEl.textContent = goldCount;
+    logEl.textContent = "- กด Cast เพื่อเริ่ม";
+    setState(ST.IDLE);
+  });
+
+  // ===== Land / break outcomes =====
+  function landFish(){
+    setState(ST.LANDED);
+    const isGold = targetType === "gold";
+    if (isGold){
+      goldCount++;
+      score += 10 + combo; // gold worth more
+      log("✨ จับได้ปลาทอง! 🐠 +10 คะแนน");
+    } else {
+      normalCount++;
+      score += 2 + Math.floor(combo/2);
+      log("🐟 จับได้ปลาธรรมดา! +2 คะแนน");
+    }
+    combo++;
+    // update UI
+    scoreEl.textContent = score;
+    comboEl.textContent = combo;
+    normalEl.textContent = normalCount;
+    goldEl.textContent = goldCount;
+
+    // little celebration
+    tension = 0;
+    updateTensionUI();
+  }
+
+  function breakLine(){
+    setState(ST.BROKE);
+    log("💥 สายขาด! ลองใหม่ (อย่าดึงแรงเกินไป)");
+    combo = 0;
+    comboEl.textContent = combo;
+    tension = 0;
+    updateTensionUI();
+  }
+
+  function updateTensionUI(){
+    const pct = Math.max(0, Math.min(1, tension));
+    tensionFill.style.width = Math.round(pct*100) + "%";
+    tensionLabel.textContent = Math.round(pct*100) + "%";
+  }
+
+  // ===== Drawing helpers =====
+  function drawSea(){
+    // sun glow
+    const g = ctx.createRadialGradient(canvas.width*0.7, canvas.height*0.05, 10, canvas.width*0.7, canvas.height*0.05, canvas.width*0.6);
+    g.addColorStop(0, "rgba(255,255,255,0.12)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // water surface
+    ctx.fillStyle = "rgba(255,255,255,0.07)";
+    ctx.fillRect(0, waterLine()-2, canvas.width, 2);
+
+    // bubbles
+    for(let i=0;i<6;i++){
+      const x = (i*0.17 + (Date.now()/5000)%1) * canvas.width;
+      const y = waterLine() + canvas.height*(0.2 + (i*0.11)%0.6);
+      ctx.beginPath();
+      ctx.arc(x, y, 6 + (i%3), 0, Math.PI*2);
+      ctx.strokeStyle = "rgba(255,255,255,0.12)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
+  function drawRodAndLine(){
+    // rod
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "rgba(255,255,255,0.7)";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(rod.x, rod.y);
+    ctx.lineTo(rod.x + 90, rod.y - 30);
+    ctx.stroke();
+
+    // line
+    ctx.strokeStyle = "rgba(219,234,254,0.85)";
+    ctx.lineWidth = 2;
+    const tipX = rod.x + 90, tipY = rod.y - 30;
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    // slight curve depending on tension
+    const midX = (tipX + hook.x)/2 + (tension*40);
+    const midY = (tipY + hook.y)/2 + (tension*35);
+    ctx.quadraticCurveTo(midX, midY, hook.x, hook.y);
+    ctx.stroke();
+
+    // hook
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(hook.x, hook.y, 8, Math.PI*0.15, Math.PI*1.25);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(hook.x+3, hook.y+8);
+    ctx.lineTo(hook.x+10, hook.y+12);
+    ctx.stroke();
+
+    // bait dot
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath();
+    ctx.arc(hook.x-2, hook.y-2, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawFish(f){
+    const bob = Math.sin(f.bob) * 5;
+    const x = f.x;
+    const y = f.y + bob;
+    const s = f.size;
+
+    // body gradient
+    let body = ctx.createLinearGradient(x - s, y, x + s, y);
+    if (f.type === "gold"){
+      body.addColorStop(0, "rgba(255,220,120,0.95)");
+      body.addColorStop(1, "rgba(255,150,70,0.95)");
+    } else {
+      body.addColorStop(0, "rgba(140,210,255,0.95)");
+      body.addColorStop(1, "rgba(80,140,255,0.95)");
+    }
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(f.dir, 1);
+
+    // body oval
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s*1.2, s*0.75, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // tail
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
+    ctx.beginPath();
+    ctx.moveTo(-s*1.2, 0);
+    ctx.lineTo(-s*1.9, -s*0.55);
+    ctx.lineTo(-s*1.9, s*0.55);
+    ctx.closePath();
+    ctx.fill();
+
+    // fin
+    ctx.fillStyle = "rgba(255,255,255,0.14)";
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(-s*0.2, -s*0.9, s*0.6, -s*0.5);
+    ctx.closePath();
+    ctx.fill();
+
+    // eye
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath();
+    ctx.arc(s*0.6, -s*0.15, 3.3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,0.75)";
+    ctx.beginPath();
+    ctx.arc(s*0.7, -s*0.15, 1.6, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawHUD(){
+    // show catch odds / info
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = `${Math.max(12, canvas.width/75)}px system-ui`;
+    ctx.fillText("โอกาสปลาทอง 1/10", 14, 24);
+
+    if (state === ST.HOOKED){
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.fillText("ติดปลาแล้ว! กด Reel ให้พอดี", 14, 48);
+    } else if (state === ST.WAITING){
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.fillText("รอปลา…", 14, 48);
+    }
+  }
+
+  // ===== Game loop =====
+  let last = performance.now();
+
+  function tick(now){
+    const dt = Math.min(33, now - last);
+    last = now;
+
+    // spawn visual fish sometimes
+    if (Math.random() < 0.02) spawnFish();
+
+    // update background fish
+    for (const f of fishes){
+      f.bob += dt/500;
+      f.x += f.dir * f.speed * (dt/5);
+    }
+
+    // hook physics + state machine
+    if (state === ST.CASTING){
+      castTimer += dt;
+      // drop hook into water smoothly
+      hook.vy += 0.0012 * dt;
+      hook.y += hook.vy * dt;
+      lineLen = Math.min(canvas.height*0.72, lineLen + dt*0.25);
+
+      // stop at a stable depth
+      const targetY = waterLine() + canvas.height*0.35;
+      if (hook.y > targetY){
+        hook.y = targetY;
+        hook.vy = 0;
+        setState(ST.WAITING);
+        log("🌊 เหยื่อจมลงแล้ว… รอปลากิน");
+      }
+    }
+    else if (state === ST.WAITING){
+      waitTimer -= dt;
+      // subtle sway
+      hook.x = (rod.x + 80) + Math.sin(now/600)*10;
+      if (waitTimer <= 0){
+        // bite!
+        setState(ST.HOOKED);
+        // create a "hooked fish" near hook
+        hookedFish = {
+          type: targetType,
+          x: hook.x + 90,
+          y: hook.y + 40,
+          dir: -1,
+          speed: (targetType === "gold" ? 1.05 : 1.0),
+          bob: Math.random()*Math.PI*2,
+          size: (targetType === "gold" ? 26 : 24),
+          hooked: true
+        };
+        log(targetType === "gold"
+          ? "💛 มีบางอย่างกัดแรงมาก… น่าจะเป็นปลาทอง!"
+          : "🎯 ติดปลาแล้ว! น่าจะเป็นปลาธรรมดา");
+      }
+    }
+    else if (state === ST.HOOKED){
+      // fish fights: random pull adds tension
+      // gold pulls a bit more on average
+      const basePull = (targetType === "gold") ? 0.0022 : 0.0018;
+      const variability = (targetType === "gold") ? 0.0028 : 0.0024;
+      fishPull = (Math.sin(now/220) * 0.5 + 0.5) * variability + basePull;
+
+      // reel reduces distance but can increase tension too
+      // If reel held, distance decreases faster; tension can spike if fishPull is high.
+      const reelEffect = reelHeld ? 0.0042 : 0.0014;   // how fast line shortens
+      const relax = 0.0019;                             // natural relaxation
+
+      // tension dynamics
+      // Increase with fishPull and with aggressive reeling; decrease with relax.
+      tension += fishPull * dt;
+      tension += (reelHeld ? 0.0018 : 0.0003) * dt;     // reeling adds tension
+      tension -= relax * dt;
+
+      tension = Math.max(0, Math.min(1.15, tension));
+
+      // move fish & hook relationship
+      if (hookedFish){
+        hookedFish.bob += dt/500;
+        // fish tries to swim away
+        hookedFish.x += (targetType === "gold" ? 0.6 : 0.5) * (dt/5);
+        hookedFish.y += Math.sin(hookedFish.bob) * 0.35;
+
+        // reeling pulls fish toward rod
+        const pullTo = (reelHeld ? 1.35 : 0.65);
+        hookedFish.x -= pullTo * (dt/6);
+
+        // keep fish within water
+        hookedFish.y = Math.max(waterLine()+40, Math.min(canvas.height-40, hookedFish.y));
+      }
+
+      // win condition: bring fish close enough to surface/rod
+      // We'll measure "line length" by vertical lift.
+      const winY = waterLine() + 60;
+      if (reelHeld){
+        hook.y -= reelEffect * dt * (1.0 - tension*0.35);
+      } else {
+        hook.y += 0.0009 * dt; // sinks a bit if no reel
+      }
+
+      // keep hook within bounds
+      hook.y = Math.max(rod.y - 5, Math.min(canvas.height-30, hook.y));
+
+      // break line if too much tension
+      if (tension >= 0.88){
+        breakLine();
+      } else if (hook.y <= rod.y + 10 || hook.y <= winY){
+        landFish();
+      }
+
+      updateTensionUI();
+    }
+
+    // draw
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawSea();
+
+    // draw background fish
+    for (const f of fishes){
+      // only draw fish under waterline
+      if (f.y > waterLine() + 10) drawFish(f);
+    }
+
+    // draw hooked fish on top
+    if (hookedFish && state === ST.HOOKED){
+      drawFish(hookedFish);
+      // keep it near hook a bit
+      const dx = (hookedFish.x - hook.x);
+      const dy = (hookedFish.y - hook.y);
+      // slight spring
+      hookedFish.x -= dx * 0.002 * dt;
+      hookedFish.y -= dy * 0.002 * dt;
+    }
+
+    drawRodAndLine();
+    drawHUD();
+
+    requestAnimationFrame(tick);
+  }
+
+  // start
+  setState(ST.IDLE);
+  updateTensionUI();
+  requestAnimationFrame(tick);
+
+})();
+</script>
+</body>
+</html>
