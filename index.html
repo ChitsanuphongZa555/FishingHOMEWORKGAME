@@ -149,10 +149,7 @@
       box-shadow: 0 18px 80px rgba(0,0,0,.45);
       padding:14px;
     }
-    .modal h2{
-      margin:0 0 6px;
-      font-size:16px;
-    }
+    .modal h2{ margin:0 0 6px; font-size:16px; }
     .badge{
       display:inline-block;
       font-size:12px;
@@ -163,11 +160,7 @@
       border-radius:999px;
       margin-bottom:10px;
     }
-    .qtext{
-      font-size:14px;
-      line-height:1.4;
-      margin:8px 0 12px;
-    }
+    .qtext{ font-size:14px; line-height:1.4; margin:8px 0 12px; }
     .choices{
       display:grid;
       grid-template-columns: 1fr;
@@ -205,7 +198,7 @@
       <div>
         <h1>🎣 Fishing + Quiz (ความน่าจะเป็น)</h1>
         <div class="sub">
-          สุ่มปลาแบบ 10 ส่วน: ปลาทอง 1/10 | ปลา A 2/10 | ปลา B 3/10 | ปลาธรรมดา 4/10
+          สุ่มปลาแบบ 10 ส่วน: ปลาทอง 1/10 | ปลาเงิน 2/10 | ปลาทองแดง 3/10 | ปลาธรรมดา 4/10
           <br/>คีย์ลัด: <span class="kbd">C</span> Cast, <span class="kbd">R</span> Reel (ค้างได้)
         </div>
       </div>
@@ -428,109 +421,142 @@
   // gold 1/10, fishA 2/10, fishB 3/10, normal 4/10
   function rollFishType(){
     const r = Math.floor(Math.random() * 10) + 1; // 1..10
-    if (r === 10) return "gold";          // 1/10
-    if (r === 8 || r === 9) return "fishA"; // 2/10
+    if (r === 10) return "gold";                 // 1/10
+    if (r === 8 || r === 9) return "fishA";      // 2/10
     if (r === 5 || r === 6 || r === 7) return "fishB"; // 3/10
-    return "normal"; // 4/10
+    return "normal";                              // 4/10
   }
 
   function fishLabel(type){
-  if (type === "gold") return "ปลาทอง 🐠";
-  if (type === "fishA") return "ปลาเงิน 🐟";
-  if (type === "fishB") return "ปลาทองแดง 🐠";
-  return "ปลาธรรมดา 🐟";
-}
+    if (type === "gold") return "ปลาทอง 🐠";
+    if (type === "fishA") return "ปลาเงิน 🐟";
+    if (type === "fishB") return "ปลาทองแดง 🐠";
+    return "ปลาธรรมดา 🐟";
+  }
 
-  // ===== Quiz bank (probability, easy) =====
+  // ===== Quiz bank =====
   const QUIZ = {
     easy: [
       { q:"โยนเหรียญ 1 ครั้ง โอกาสออกหัวเท่าไร?", opts:["1/2","1/3","1/4"], a:0 },
       { q:"ทอยลูกเต๋า 1 ลูก โอกาสได้เลขคู่เท่าไร?", opts:["1/2","1/3","2/3"], a:0 },
       { q:"สุ่มเลขจาก {1,2,3,4} 1 ตัว โอกาสได้เลข 1 เท่าไร?", opts:["1/4","1/2","3/4"], a:0 },
       { q:"หยิบลูกบอลจากถุงที่มี แดง 1 น้ำเงิน 1 (รวม 2) โอกาสได้สีแดงเท่าไร?", opts:["1/2","1/3","2/3"], a:0 },
-      { q:"ทอยลูกเต๋า 1 ลูก โอกาสได้เลขมากกว่า 4 เท่าไร?", opts:["1/3","1/2","2/3"], a:0 }, // 5,6 => 2/6=1/3
+      { q:"ทอยลูกเต๋า 1 ลูก โอกาสได้เลขมากกว่า 4 เท่าไร?", opts:["1/3","1/2","2/3"], a:0 },
     ],
     medium: [
       { q:"ทอยลูกเต๋า 1 ลูก โอกาสได้ 1 หรือ 2 เท่าไร?", opts:["1/3","1/2","2/3"], a:0 },
       { q:"โยนเหรียญ 2 ครั้ง โอกาสออกหัวทั้งสองครั้งเท่าไร?", opts:["1/4","1/2","3/4"], a:0 },
       { q:"หยิบลูกบอล 1 ลูก จากถุงที่มี แดง 2 น้ำเงิน 3 โอกาสได้สีแดงเท่าไร?", opts:["2/5","3/5","1/5"], a:0 },
-      { q:"ทอยลูกเต๋า 1 ลูก โอกาสได้เลขคี่หรือเลข 6 เท่าไร?", opts:["2/3","1/2","1/3"], a:0 }, // odd 3/6 +6 1/6 =>4/6=2/3
-      { q:"สุ่มการ์ด 1 ใบจาก 10 ใบ (มีการ์ดพิเศษ 2 ใบ) โอกาสได้การ์ดพิเศษเท่าไร?", opts:["2/10","1/5","3/10"], a:1 }, // 2/10=1/5
+      { q:"ทอยลูกเต๋า 1 ลูก โอกาสได้เลขคี่หรือเลข 6 เท่าไร?", opts:["2/3","1/2","1/3"], a:0 },
+      { q:"สุ่มการ์ด 1 ใบจาก 10 ใบ (มีการ์ดพิเศษ 2 ใบ) โอกาสได้การ์ดพิเศษเท่าไร?", opts:["2/10","1/5","3/10"], a:1 },
     ],
     hard: [
-      { q:"ทอยลูกเต๋า 2 ลูก โอกาสที่ผลรวมเป็น 7 เท่าไร?", opts:["1/6","1/12","1/9"], a:0 }, // 6/36=1/6
-      { q:"โยนเหรียญ 3 ครั้ง โอกาสออกหัว “พอดี 2 ครั้ง” เท่าไร?", opts:["3/8","1/4","1/2"], a:0 }, // C(3,2)/8=3/8
-      { q:"ทอยลูกเต๋า 2 ลูก โอกาสที่ได้เลขเหมือนกัน (ดับเบิล) เท่าไร?", opts:["1/6","1/3","1/12"], a:0 }, // 6/36=1/6
-      { q:"หยิบลูกบอล 1 ลูกจากถุง แดง 1 น้ำเงิน 2 เขียว 3 โอกาสไม่ใช่สีเขียวเท่าไร?", opts:["1/2","1/3","2/3"], a:0 }, // not green 3/6=1/2
-      { q:"สุ่มเลข 1-10 โอกาสได้จำนวนเฉพาะ (2,3,5,7) เท่าไร?", opts:["2/5","1/2","3/10"], a:0 }, // 4/10=2/5
+      { q:"ทอยลูกเต๋า 2 ลูก โอกาสที่ผลรวมเป็น 7 เท่าไร?", opts:["1/6","1/12","1/9"], a:0 },
+      { q:"โยนเหรียญ 3 ครั้ง โอกาสออกหัว “พอดี 2 ครั้ง” เท่าไร?", opts:["3/8","1/4","1/2"], a:0 },
+      { q:"ทอยลูกเต๋า 2 ลูก โอกาสที่ได้เลขเหมือนกัน (ดับเบิล) เท่าไร?", opts:["1/6","1/3","1/12"], a:0 },
+      { q:"หยิบลูกบอล 1 ลูกจากถุง แดง 1 น้ำเงิน 2 เขียว 3 โอกาสไม่ใช่สีเขียวเท่าไร?", opts:["1/2","1/3","2/3"], a:0 },
+      { q:"สุ่มเลข 1-10 โอกาสได้จำนวนเฉพาะ (2,3,5,7) เท่าไร?", opts:["2/5","1/2","3/10"], a:0 },
     ]
   };
 
   function pickDifficulty(type){
-    if (type === "gold") return "hard";      // ยากสุด
-    if (type === "fishB") return "medium";   // กลาง
-    if (type === "fishA") return "easy";     // ง่าย
-    return "easy";                           // ง่าย
+    if (type === "gold") return "hard";
+    if (type === "fishB") return "medium";
+    if (type === "fishA") return "easy";
+    return "easy";
   }
 
-let quizTimer = null;
-let quizTimeLeft = 45;
+  // ===== Quiz timer (GLOBAL) =====
+  let quizTimer = null;
+  let quizTimeLeft = 45;
 
-function stopQuizTimer(){
-  if (quizTimer) {
-    clearInterval(quizTimer);
-    quizTimer = null;
+  function stopQuizTimer(){
+    if (quizTimer){
+      clearInterval(quizTimer);
+      quizTimer = null;
+    }
   }
-}
 
-function lockQuizChoices(){
-  [...quizChoices.querySelectorAll("button")].forEach(x => x.disabled = true);
-  skipBtn.disabled = true;
-}
+  function lockQuizChoices(){
+    [...quizChoices.querySelectorAll("button")].forEach(x => x.disabled = true);
+    skipBtn.disabled = true;
+  }
 
-function closeQuizToIdle(){
-  quizOverlay.classList.remove("show");
-  setState(ST.IDLE);
-  log("🎯 พร้อมแล้ว กด Cast เพื่อตกปลาอีกรอบ");
-}
+  function closeQuizToIdle(){
+    quizOverlay.classList.remove("show");
+    setState(ST.IDLE);
+    log("🎯 พร้อมแล้ว กด Cast เพื่อตกปลาอีกรอบ");
+  }
 
-function showQuiz(type){
-  setState(ST.QUIZ);
-
-  const diff = pickDifficulty(type);
-  const pool = QUIZ[diff];
-  const item = pool[Math.floor(Math.random() * pool.length)];
-
-  quizBadge.textContent = `${fishLabel(type)} • ระดับ: ${diff === "easy" ? "ง่าย" : diff === "medium" ? "กลาง" : "ยาก"}`;
-  quizTitle.textContent = "ตอบคำถามความน่าจะเป็นเพื่อรับ +1 คะแนน";
-  quizQuestion.textContent = item.q;
-  quizResult.textContent = "";
-
-  // Reset timer
-  stopQuizTimer();
-  quizTimeLeft = 45;
-  quizTimeEl.textContent = quizTimeLeft;
-
-  // Build choices
-  quizChoices.innerHTML = "";
-  item.opts.forEach((opt, idx) => {
+  function showWin(){
+    stopQuizTimer();
+    setState(ST.WIN);
+    quizBadge.textContent = "🎉 ชนะแล้ว!";
+    quizTitle.textContent = "คุณชนะเกม!";
+    quizQuestion.innerHTML = `<div class="winTitle">คะแนนถึง 5 แล้ว ✅</div>อยากเล่นใหม่กด Reset ได้เลย`;
+    quizChoices.innerHTML = "";
     const b = document.createElement("button");
     b.className = "choiceBtn";
-    b.textContent = `${String.fromCharCode(65+idx)}. ${opt}`;
-    b.onclick = () => {
+    b.textContent = "↻ Reset (เริ่มใหม่)";
+    b.onclick = () => resetGame();
+    quizChoices.appendChild(b);
+    quizResult.textContent = "";
+    quizOverlay.classList.add("show");
+    log("🏆 ชนะแล้ว! กด Reset เพื่อเริ่มใหม่");
+  }
+
+  function showQuiz(type){
+    setState(ST.QUIZ);
+
+    const diff = pickDifficulty(type);
+    const pool = QUIZ[diff];
+    const item = pool[Math.floor(Math.random() * pool.length)];
+
+    quizBadge.textContent = `${fishLabel(type)} • ระดับ: ${diff === "easy" ? "ง่าย" : diff === "medium" ? "กลาง" : "ยาก"}`;
+    quizTitle.textContent = "ตอบคำถามความน่าจะเป็นเพื่อรับ +1 คะแนน";
+    quizQuestion.textContent = item.q;
+    quizResult.textContent = "";
+
+    stopQuizTimer();
+    quizTimeLeft = 45;
+    quizTimeEl.textContent = quizTimeLeft;
+
+    quizChoices.innerHTML = "";
+    item.opts.forEach((opt, idx) => {
+      const b = document.createElement("button");
+      b.className = "choiceBtn";
+      b.textContent = `${String.fromCharCode(65+idx)}. ${opt}`;
+      b.onclick = () => {
+        lockQuizChoices();
+        stopQuizTimer();
+
+        const correct = (idx === item.a);
+        if (correct){
+          score += 1;
+          quizResult.textContent = "✅ ถูกต้อง! +1 คะแนน";
+          log(`✅ ตอบถูก! ได้ 1 คะแนน (ตอนจับ ${fishLabel(type)})`);
+        } else {
+          quizResult.textContent = "❌ ไม่ถูก ได้ 0 คะแนน";
+          log(`❌ ตอบผิด (ตอนจับ ${fishLabel(type)})`);
+        }
+
+        updateUI();
+
+        if (score >= 5){
+          setTimeout(() => showWin(), 450);
+          return;
+        }
+        setTimeout(() => closeQuizToIdle(), 650);
+      };
+      quizChoices.appendChild(b);
+    });
+
+    skipBtn.disabled = false;
+    skipBtn.onclick = () => {
       lockQuizChoices();
       stopQuizTimer();
-
-      const correct = (idx === item.a);
-      if (correct){
-        score += 1;
-        quizResult.textContent = "✅ ถูกต้อง! +1 คะแนน";
-        log(`✅ ตอบถูก! ได้ 1 คะแนน (ตอนจับ ${fishLabel(type)})`);
-      } else {
-        quizResult.textContent = "❌ ไม่ถูก ได้ 0 คะแนน";
-        log(`❌ ตอบผิด (ตอนจับ ${fishLabel(type)})`);
-      }
-
+      quizResult.textContent = "⏭️ ข้ามคำถาม ได้ 0 คะแนน";
+      log(`⏭️ ข้ามคำถาม (ตอนจับ ${fishLabel(type)})`);
       updateUI();
 
       if (score >= 5){
@@ -539,43 +565,23 @@ function showQuiz(type){
       }
       setTimeout(() => closeQuizToIdle(), 650);
     };
-    quizChoices.appendChild(b);
-  });
 
-  // Skip button
-  skipBtn.disabled = false;
-  skipBtn.onclick = () => {
-    lockQuizChoices();
-    stopQuizTimer();
-    quizResult.textContent = "⏭️ ข้ามคำถาม ได้ 0 คะแนน";
-    log(`⏭️ ข้ามคำถาม (ตอนจับ ${fishLabel(type)})`);
-    updateUI();
+    quizTimer = setInterval(() => {
+      quizTimeLeft -= 1;
+      quizTimeEl.textContent = quizTimeLeft;
 
-    if (score >= 5){
-      setTimeout(() => showWin(), 450);
-      return;
-    }
-    setTimeout(() => closeQuizToIdle(), 650);
-  };
+      if (quizTimeLeft <= 0){
+        lockQuizChoices();
+        stopQuizTimer();
+        quizResult.textContent = "⏱️ หมดเวลา ได้ 0 คะแนน";
+        log(`⏱️ หมดเวลา (ตอนจับ ${fishLabel(type)})`);
+        updateUI();
+        setTimeout(() => closeQuizToIdle(), 650);
+      }
+    }, 1000);
 
-  // Start countdown
-  quizTimer = setInterval(() => {
-    quizTimeLeft -= 1;
-    quizTimeEl.textContent = quizTimeLeft;
-
-    if (quizTimeLeft <= 0){
-      lockQuizChoices();
-      stopQuizTimer();
-      quizResult.textContent = "⏱️ หมดเวลา ได้ 0 คะแนน";
-      log(`⏱️ หมดเวลา (ตอนจับ ${fishLabel(type)})`);
-      updateUI();
-      setTimeout(() => closeQuizToIdle(), 650);
-    }
-  }, 1000);
-
-  quizOverlay.classList.add("show");
-}
-
+    quizOverlay.classList.add("show");
+  }
 
   // ===== Spawn background fish visuals =====
   function spawnFish(){
@@ -600,7 +606,6 @@ function showQuiz(type){
   function cast(){
     if (!(state === ST.IDLE || state === ST.BROKE)) return;
 
-    // reset hook
     hook.x = rod.x + 80;
     hook.y = rod.y + 30;
     hook.vy = 0;
@@ -609,19 +614,18 @@ function showQuiz(type){
     targetType = null;
     tension = 0;
     fishPull = 0;
+    updateTensionUI();
 
     setState(ST.CASTING);
     castTimer = 0;
     log("🎯 เหวี่ยงเบ็ด!");
 
-    targetType = rollFishType(); // decide catch type
+    targetType = rollFishType();
     waitTimer = 750 + Math.random()*1250;
   }
 
   // ===== Reel controls =====
-  function setReelHeld(on){
-    reelHeld = on;
-  }
+  function setReelHeld(on){ reelHeld = on; }
   reelBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); if(!reelBtn.disabled) setReelHeld(true); });
   reelBtn.addEventListener('pointerup',   (e) => { e.preventDefault(); setReelHeld(false); });
   reelBtn.addEventListener('pointercancel',(e)=> { e.preventDefault(); setReelHeld(false); });
@@ -640,6 +644,9 @@ function showQuiz(type){
   castBtn.addEventListener('click', cast);
 
   function resetGame(){
+    stopQuizTimer();
+    quizOverlay.classList.remove("show");
+
     score = 0;
     normalCount = 0;
     fishACount = 0;
@@ -651,15 +658,12 @@ function showQuiz(type){
     tension = 0;
     updateTensionUI();
     updateUI();
-    stopQuizTimer();
-    quizOverlay.classList.remove("show");
     setState(ST.IDLE);
   }
   resetBtn.addEventListener('click', resetGame);
 
   // ===== outcomes =====
   function landed(){
-    // count fish
     totalCount++;
     if (targetType === "gold") goldCount++;
     else if (targetType === "fishA") fishACount++;
@@ -668,12 +672,11 @@ function showQuiz(type){
 
     updateUI();
     setState(ST.LANDED);
+
     tension = 0;
     updateTensionUI();
 
     log(`🎣 จับได้ ${fishLabel(targetType)} — กำลังเปิดคำถาม...`);
-
-    // open quiz immediately
     setTimeout(() => showQuiz(targetType), 350);
   }
 
@@ -721,7 +724,6 @@ function showQuiz(type){
     ctx.lineTo(rod.x + 90, rod.y - 30);
     ctx.stroke();
 
-    // line
     ctx.strokeStyle = "rgba(219,234,254,0.85)";
     ctx.lineWidth = 2;
     const tipX = rod.x + 90, tipY = rod.y - 30;
@@ -732,7 +734,6 @@ function showQuiz(type){
     ctx.quadraticCurveTo(midX, midY, hook.x, hook.y);
     ctx.stroke();
 
-    // hook
     ctx.strokeStyle = "rgba(255,255,255,0.9)";
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -837,7 +838,6 @@ function showQuiz(type){
 
     // pause logic during quiz/win
     if (state === ST.QUIZ || state === ST.WIN){
-      // draw only
       ctx.clearRect(0,0,canvas.width,canvas.height);
       drawSea();
       for (const f of fishes){
@@ -865,6 +865,7 @@ function showQuiz(type){
     else if (state === ST.WAITING){
       waitTimer -= dt;
       hook.x = (rod.x + 80) + Math.sin(now/600)*10;
+
       if (waitTimer <= 0){
         setState(ST.HOOKED);
         hookedFish = {
@@ -881,74 +882,42 @@ function showQuiz(type){
       }
     }
     else if (state === ST.HOOKED){
-  // fish pull intensity by type
-  const pullBase = (targetType === "gold") ? 0.0022 : (targetType === "fishB") ? 0.0020 : 0.0018;
-  const pullVar  = (targetType === "gold") ? 0.0029 : (targetType === "fishB") ? 0.0026 : 0.0024;
-  fishPull = (Math.sin(now/220) * 0.5 + 0.5) * pullVar + pullBase;
+      // ===== FIXED HOOKED LOGIC (NO DUPLICATE) =====
+      const pullBase = (targetType === "gold") ? 0.0022 : (targetType === "fishB") ? 0.0020 : 0.0018;
+      const pullVar  = (targetType === "gold") ? 0.0029 : (targetType === "fishB") ? 0.0026 : 0.0024;
+      fishPull = (Math.sin(now/220) * 0.5 + 0.5) * pullVar + pullBase;
 
-  // ✅ FIX: ทำให้ tension “ขึ้นจริง” (ลด relax ลง + clamp)
-  const relax = 0.00055; // เดิม 0.0019 แรงเกินไป ทำให้ติดลบตลอด
-  tension += fishPull * dt * 0.55;                 // เพิ่มจากปลา
-  tension += (reelHeld ? 0.00042 : 0.00010) * dt;  // กด Reel แล้วค่อยๆขึ้น (ช้าลง)
-  tension -= relax * dt;                            // คลายช้าลง
+      const relax = 0.00055;
+      tension += fishPull * dt * 0.55;
+      tension += (reelHeld ? 0.00042 : 0.00010) * dt;
+      tension -= relax * dt;
 
-  // clamp ให้ไม่ติดลบและไม่ทะลุ
-  tension = Math.max(0, Math.min(1.2, tension));
-
-  // fish follows hook a bit
-  if (hookedFish){
-    hookedFish.bob += dt/500;
-    hookedFish.x += (targetType === "gold" ? 0.6 : 0.5) * (dt/5);
-    hookedFish.y += Math.sin(hookedFish.bob) * 0.35;
-
-    const pullTo = (reelHeld ? 1.0 : 0.5); // ดึงกลับช้าลงนิด
-    hookedFish.x -= pullTo * (dt/6);
-
-    hookedFish.y = Math.max(waterLine()+40, Math.min(canvas.height-40, hookedFish.y));
-  }
-
-  // ✅ Reel ช้าลง (คุมง่ายขึ้น)
-  const reelLift = reelHeld ? 0.0019 : 0.0006;
-  if (reelHeld){
-    hook.y -= reelLift * dt * (1.0 - tension*0.35);
-  } else {
-    hook.y += 0.0008 * dt;
-  }
-  hook.y = Math.max(rod.y - 5, Math.min(canvas.height-30, hook.y));
-
-  // ✅ จบเกมเพลย์: สายขาด/จับได้
-  if (tension >= 0.97){
-    breakLine();
-  } else if (hook.y <= rod.y + 10 || hook.y <= waterLine() + 60){
-    landed();
-  }
-
-  updateTensionUI();
-}
-
-
+      tension = Math.max(0, Math.min(1.2, tension));
 
       if (hookedFish){
         hookedFish.bob += dt/500;
         hookedFish.x += (targetType === "gold" ? 0.6 : 0.5) * (dt/5);
         hookedFish.y += Math.sin(hookedFish.bob) * 0.35;
 
-        const pullTo = (reelHeld ? 1.2 : 0.6);
+        const pullTo = (reelHeld ? 1.0 : 0.5);
         hookedFish.x -= pullTo * (dt/6);
 
         hookedFish.y = Math.max(waterLine()+40, Math.min(canvas.height-40, hookedFish.y));
       }
 
-      // reeling lifts hook
+      const reelLift = reelHeld ? 0.0019 : 0.0006;
       if (reelHeld){
         hook.y -= reelLift * dt * (1.0 - tension*0.35);
       } else {
-        hook.y += 0.0009 * dt;
+        hook.y += 0.0008 * dt;
       }
-
       hook.y = Math.max(rod.y - 5, Math.min(canvas.height-30, hook.y));
 
-      // break threshold (ผ่อนปรนขึ้น)
+      if (tension >= 0.97){
+        breakLine();
+      } else if (hook.y <= rod.y + 10 || hook.y <= waterLine() + 60){
+        landed();
+      }
 
       updateTensionUI();
     }
