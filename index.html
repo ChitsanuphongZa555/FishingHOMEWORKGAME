@@ -888,8 +888,8 @@
       fishPull = (Math.sin(now/220) * 0.5 + 0.5) * pullVar + pullBase;
 
       const relax = 0.00055;
-      tension += fishPull * dt * 0.55;
-      tension += (reelHeld ? 0.00042 : 0.00010) * dt;
+      tension += fishPull * dt * 0.90;
+      tension += (reelHeld ? 0.00085 : 0.00022) * dt;
       tension -= relax * dt;
 
       tension = Math.max(0, Math.min(1.2, tension));
