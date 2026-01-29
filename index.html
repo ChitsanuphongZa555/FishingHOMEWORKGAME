@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>🎣 Fishing Quiz (Prob)</title>
+  <title>🎣 Fishing Quiz (Prob) - EASY</title>
   <style>
     :root{
       --bg:#071427;
@@ -130,6 +130,7 @@
       color: var(--text);
     }
 
+    /* ===== Quiz modal ===== */
     .overlay{
       position:fixed;
       inset:0;
@@ -199,10 +200,10 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>🎣 Fishing + Quiz (ความน่าจะเป็น)</h1>
+        <h1>🎣 Fishing + Quiz (ความน่าจะเป็น) — EASY</h1>
         <div class="sub">
           สุ่มปลาแบบ 10 ส่วน: ปลาทอง 1/10 | ปลาเงิน 2/10 | ปลาทองแดง 3/10 | ปลาธรรมดา 4/10
-          <br/>คีย์ลัด: <span class="kbd">C</span> Cast, <span class="kbd">R</span> Reel (Toggle)
+          <br/>คีย์ลัด: <span class="kbd">C</span> Cast, <span class="kbd">R</span> Reel (จับทันที)
         </div>
       </div>
       <div class="sub" id="stateText">สถานะ: พร้อมตกปลา</div>
@@ -248,7 +249,7 @@
             <div class="row">
               <div>
                 <div class="k">แรงตึงสาย (Tension)</div>
-                <div class="sub">ตึงเกิน = สายขาด</div>
+                <div class="sub">EASY: ไม่ต้องคุม กด Reel = จับเลย</div>
               </div>
               <div style="font-weight:900" id="tensionLabel">0%</div>
             </div>
@@ -256,13 +257,12 @@
 
             <div class="btns">
               <button class="primary" id="castBtn">🎯 Cast</button>
-              <button class="primary" id="reelBtn" disabled>🌀 Reel</button>
+              <button class="primary" id="reelBtn" disabled>🌀 Reel (จับ)</button>
               <button class="danger" id="resetBtn">↻ Reset</button>
             </div>
 
             <div class="hint">
-              เป้าหมาย: “ตอบคำถามถูก” ให้ได้ 5 คะแนนเพื่อชนะ
-              <br/>ทิป: คลิก Reel 1 ครั้ง = ค้าง ON (คลิกอีกครั้ง = OFF)
+              วิธีเล่น: Cast → รอ “ติดปลาแล้ว!” → กด Reel 1 ครั้ง = จับทันที
             </div>
           </div>
 
@@ -294,6 +294,7 @@
 
 <script>
 (() => {
+  // ===== Canvas setup =====
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
@@ -308,6 +309,7 @@
   window.addEventListener('resize', fitCanvas);
   fitCanvas();
 
+  // ===== UI =====
   const castBtn = document.getElementById('castBtn');
   const reelBtn = document.getElementById('reelBtn');
   const resetBtn = document.getElementById('resetBtn');
@@ -337,73 +339,51 @@
     logEl.textContent = msg + "\n" + logEl.textContent.split("\n").slice(0,5).join("\n");
   }
 
+  // ===== State =====
   const ST = {
     IDLE: "IDLE",
     CASTING: "CASTING",
     WAITING: "WAITING",
     HOOKED: "HOOKED",
     LANDED: "LANDED",
-    BROKE: "BROKE",
     QUIZ: "QUIZ",
     WIN: "WIN",
   };
 
   let state = ST.IDLE;
 
-  let score = 0;
-  let normalCount = 0;
-  let fishACount = 0;
-  let fishBCount = 0;
-  let goldCount = 0;
-  let totalCount = 0;
+  // counts
+  let score = 0, normalCount = 0, fishACount = 0, fishBCount = 0, goldCount = 0, totalCount = 0;
 
+  // Rod & hook
   const rod = { x: 130, y: 110 };
   let hook = { x: 220, y: 160, vy: 0 };
 
+  // Fish visuals
   const fishes = [];
   const waterLine = () => canvas.height * 0.28;
 
+  // mechanics
   let hookedFish = null;
   let targetType = null;
   let tension = 0;
   let waitTimer = 0;
   let castTimer = 0;
-  let fishPull = 0;
-
-  // ===== ✅ Reel state (สำคัญ) =====
-  let reelHeld = false;
-  let reelToggle = false;
-
-  function setReel(on){
-    if (reelBtn.disabled) return;
-    reelHeld = on;
-    reelBtn.textContent = reelHeld ? "🌀 Reel (ON)" : "🌀 Reel";
-  }
-
-  function resetReel(){
-    reelHeld = false;
-    reelToggle = false;
-    reelBtn.textContent = "🌀 Reel";
-  }
 
   function setState(s){
     state = s;
-
-    // ✅ กัน “ค้าง/หลอน” ทุกครั้งที่เปลี่ยนสถานะ
-    resetReel();
-
     const map = {
       IDLE: "สถานะ: พร้อมตกปลา",
       CASTING: "สถานะ: เหวี่ยงเบ็ด…",
       WAITING: "สถานะ: รอปลากินเหยื่อ…",
-      HOOKED: "สถานะ: ติดปลาแล้ว! Reel!",
+      HOOKED: "สถานะ: ติดปลาแล้ว! กด Reel เพื่อจับ",
       LANDED: "สถานะ: จับได้! ตอบคำถาม",
-      BROKE: "สถานะ: สายขาด… กด Cast ใหม่",
       QUIZ: "สถานะ: ตอบคำถาม",
       WIN: "สถานะ: ชนะแล้ว!",
     };
     stateText.textContent = map[s] || ("สถานะ: " + s);
 
+    // buttons
     if (s === ST.IDLE){
       castBtn.disabled = false;
       reelBtn.disabled = true;
@@ -413,10 +393,7 @@
     } else if (s === ST.HOOKED){
       castBtn.disabled = true;
       reelBtn.disabled = false;
-    } else if (s === ST.BROKE){
-      castBtn.disabled = false;
-      reelBtn.disabled = true;
-    } else if (s === ST.QUIZ || s === ST.WIN || s === ST.LANDED){
+    } else {
       castBtn.disabled = true;
       reelBtn.disabled = true;
     }
@@ -432,17 +409,19 @@
   }
 
   function updateTensionUI(){
-    const pct = Math.max(0, Math.min(1, tension));
-    tensionFill.style.width = Math.round(pct*100) + "%";
-    tensionLabel.textContent = Math.round(pct*100) + "%";
+    // EASY: แสดงเป็น 0 เสมอ (ไม่ต้องคุม)
+    tension = 0;
+    tensionFill.style.width = "0%";
+    tensionLabel.textContent = "0%";
   }
 
+  // ===== Probability roll (10 parts) =====
   function rollFishType(){
-    const r = Math.floor(Math.random() * 10) + 1;
-    if (r === 10) return "gold";
-    if (r === 8 || r === 9) return "fishA";
-    if (r === 5 || r === 6 || r === 7) return "fishB";
-    return "normal";
+    const r = Math.floor(Math.random() * 10) + 1; // 1..10
+    if (r === 10) return "gold";                 // 1/10
+    if (r === 8 || r === 9) return "fishA";      // 2/10
+    if (r === 5 || r === 6 || r === 7) return "fishB"; // 3/10
+    return "normal";                              // 4/10
   }
 
   function fishLabel(type){
@@ -452,6 +431,7 @@
     return "ปลาธรรมดา 🐟";
   }
 
+  // ===== Quiz bank =====
   const QUIZ = {
     easy: [
       { q:"โยนเหรียญ 1 ครั้ง โอกาสออกหัวเท่าไร?", opts:["1/2","1/3","1/4"], a:0 },
@@ -482,6 +462,7 @@
     return "easy";
   }
 
+  // ===== Quiz timer =====
   let quizTimer = null;
   let quizTimeLeft = 45;
 
@@ -598,6 +579,7 @@
     quizOverlay.classList.add("show");
   }
 
+  // ===== visuals fish =====
   function spawnFish(){
     const types = ["normal","fishA","fishB","gold"];
     const type = types[Math.floor(Math.random()*types.length)];
@@ -616,8 +598,9 @@
     if (fishes.length > 14) fishes.shift();
   }
 
+  // ===== Start cast =====
   function cast(){
-    if (!(state === ST.IDLE || state === ST.BROKE)) return;
+    if (state !== ST.IDLE) return;
 
     hook.x = rod.x + 80;
     hook.y = rod.y + 30;
@@ -626,7 +609,6 @@
     hookedFish = null;
     targetType = null;
     tension = 0;
-    fishPull = 0;
     updateTensionUI();
 
     setState(ST.CASTING);
@@ -634,70 +616,33 @@
     log("🎯 เหวี่ยงเบ็ด!");
 
     targetType = rollFishType();
-    waitTimer = 750 + Math.random()*1250;
+    waitTimer = 700 + Math.random()*900; // เร็วขึ้นนิดให้เล่นง่าย
   }
+  castBtn.addEventListener('click', cast);
 
-  // ===== ✅ REEL controls (ชัวร์: Mac trackpad + iPhone/Android) =====
-  function tryOn(){ setReel(true); }
-  function tryOff(){ if (!reelToggle) setReel(false); }
+  // ===== ✅ SUPER EASY REEL: กดครั้งเดียว = จับเลย =====
+  function reelNow(){
+    if (state !== ST.HOOKED) return;
+    landed();
+  }
+  // รองรับ click / touch / trackpad / pointer
+  reelBtn.addEventListener("click", (e) => { e.preventDefault(); reelNow(); });
+  reelBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); reelNow(); }, { passive:false });
 
-  // pointer ครอบคลุม mouse+touch+trackpad
-  reelBtn.addEventListener("pointerdown", (e) => {
-    if (reelBtn.disabled) return;
-    e.preventDefault();
-    if (!reelToggle) tryOn();
-    try { reelBtn.setPointerCapture(e.pointerId); } catch(_) {}
-  }, { passive:false });
-
-  reelBtn.addEventListener("pointerup", (e) => {
-    if (reelBtn.disabled) return;
-    e.preventDefault();
-    tryOff();
-    try { reelBtn.releasePointerCapture(e.pointerId); } catch(_) {}
-  }, { passive:false });
-
-  reelBtn.addEventListener("pointercancel", () => {
-    if (!reelToggle) setReel(false);
-  });
-
-  // click = toggle (แก้กดค้างยาก)
-  reelBtn.addEventListener("click", (e) => {
-    if (reelBtn.disabled) return;
-    e.preventDefault();
-    reelToggle = !reelToggle;
-    setReel(reelToggle);
-  });
-
-  // ปล่อยนอกปุ่มก็ OFF ได้
-  window.addEventListener("pointerup", () => { tryOff(); }, { passive:true });
-
-  // กันค้างตอนสลับแท็บ/หลุดโฟกัส
-  window.addEventListener("blur", () => { reelToggle = false; setReel(false); });
-
-  // คีย์บอร์ด: R = toggle, C = cast
+  // คีย์บอร์ด
   window.addEventListener("keydown", (e) => {
     const k = e.key.toLowerCase();
     if (k === "c") cast();
-    if (k === "r" && state === ST.HOOKED && !e.repeat){
-      reelToggle = !reelToggle;
-      setReel(reelToggle);
-    }
+    if (k === "r") reelNow();
   });
-
-  castBtn.addEventListener('click', cast);
 
   function resetGame(){
     stopQuizTimer();
     quizOverlay.classList.remove("show");
 
-    score = 0;
-    normalCount = 0;
-    fishACount = 0;
-    fishBCount = 0;
-    goldCount = 0;
-    totalCount = 0;
-
+    score = 0; normalCount = 0; fishACount = 0; fishBCount = 0; goldCount = 0; totalCount = 0;
     logEl.textContent = "- กด Cast เพื่อเริ่ม";
+
     tension = 0;
     updateTensionUI();
     updateUI();
@@ -705,6 +650,7 @@
   }
   resetBtn.addEventListener('click', resetGame);
 
+  // ===== outcomes =====
   function landed(){
     totalCount++;
     if (targetType === "gold") goldCount++;
@@ -714,19 +660,10 @@
 
     updateUI();
     setState(ST.LANDED);
-
-    tension = 0;
     updateTensionUI();
 
     log(`🎣 จับได้ ${fishLabel(targetType)} — กำลังเปิดคำถาม...`);
-    setTimeout(() => showQuiz(targetType), 350);
-  }
-
-  function breakLine(){
-    setState(ST.BROKE);
-    log("💥 สายขาด! ลองใหม่ (คุม Reel ให้พอดี)");
-    tension = 0;
-    updateTensionUI();
+    setTimeout(() => showQuiz(targetType), 250);
   }
 
   function drawSea(){
@@ -764,8 +701,8 @@
     const tipX = rod.x + 90, tipY = rod.y - 30;
     ctx.beginPath();
     ctx.moveTo(tipX, tipY);
-    const midX = (tipX + hook.x)/2 + (tension*40);
-    const midY = (tipY + hook.y)/2 + (tension*35);
+    const midX = (tipX + hook.x)/2;
+    const midY = (tipY + hook.y)/2;
     ctx.quadraticCurveTo(midX, midY, hook.x, hook.y);
     ctx.stroke();
 
@@ -846,29 +783,32 @@
     ctx.fillText("ชนะที่ 5 คะแนน (ตอบคำถามถูก)", 14, 24);
 
     ctx.fillStyle = "rgba(255,255,255,0.75)";
-    ctx.fillText("ปลา: ปลาทอง 1/10 • ปลาเงิน 2/10 • ปลาทองแดง 3/10 • ปลาธรรมดา 4/10", 14, 46);
+    ctx.fillText("EASY: ติดปลาแล้วกด Reel 1 ครั้ง = จับทันที", 14, 46);
 
     if (state === ST.HOOKED){
-      ctx.fillStyle = "rgba(255,255,255,0.9)";
-      ctx.fillText("ติดปลาแล้ว! คลิก Reel = ค้าง ON", 14, 70);
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.fillText("ติดปลาแล้ว! กด Reel เลย!", 14, 70);
     } else if (state === ST.WAITING){
       ctx.fillStyle = "rgba(255,255,255,0.75)";
       ctx.fillText("รอปลา…", 14, 70);
     }
   }
 
+  // ===== Game loop =====
   let last = performance.now();
 
   function tick(now){
     const dt = Math.min(33, now - last);
     last = now;
 
+    // visuals fish
     if (Math.random() < 0.02) spawnFish();
     for (const f of fishes){
       f.bob += dt/500;
       f.x += f.dir * f.speed * (dt/5);
     }
 
+    // pause logic during quiz/win
     if (state === ST.QUIZ || state === ST.WIN){
       ctx.clearRect(0,0,canvas.width,canvas.height);
       drawSea();
@@ -905,47 +845,25 @@
           x: hook.x + 90,
           y: hook.y + 40,
           dir: -1,
-          speed: (targetType === "gold" ? 1.08 : targetType === "fishB" ? 1.04 : 1.0),
+          speed: 1.0,
           bob: Math.random()*Math.PI*2,
           size: (targetType === "gold" ? 26 : 24),
           hooked: true
         };
-        log(`🎯 ติดปลาแล้ว! (${fishLabel(targetType)})`);
+        log(`🎯 ติดปลาแล้ว! (${fishLabel(targetType)}) กด Reel เพื่อจับ`);
       }
     }
     else if (state === ST.HOOKED){
-  // ===== 🟢 EASY MODE: จับง่ายมาก =====
+      // EASY: แค่โชว์ปลาตามเบ็ด (ไม่ต้องคุม)
+      if (hookedFish){
+        hookedFish.bob += dt/450;
+        hookedFish.x += (hook.x - hookedFish.x) * 0.06;
+        hookedFish.y += (hook.y - hookedFish.y) * 0.06;
+      }
+      updateTensionUI();
+    }
 
-  // 1) tension แทบไม่ขึ้น (สายไม่ขาด)
-  tension += (reelHeld ? 0.00015 : 0.00002) * dt;
-  tension -= 0.0012 * dt;
-  tension = Math.max(0, Math.min(1, tension));
-
-  // 2) ยกเบ็ดแรงมาก กด Reel = ขึ้นทันที
-  const reelLift = reelHeld ? 0.0065 : 0.0003;
-  if (reelHeld){
-    hook.y -= reelLift * dt;
-  } else {
-    hook.y += 0.0006 * dt;
-  }
-  hook.y = Math.max(rod.y - 15, Math.min(canvas.height - 30, hook.y));
-
-  // 3) ปลาเกาะเบ็ดแน่น ตามขึ้นทันที
-  if (hookedFish){
-    hookedFish.x += (hook.x - hookedFish.x) * 0.08;
-    hookedFish.y += (hook.y - hookedFish.y) * 0.08;
-  }
-
-  // 4) จับได้ง่ายมาก
-  if (hook.y <= rod.y + 35){
-    landed();
-  }
-
-  updateTensionUI();
-}
-
-
-
+    // draw
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawSea();
 
@@ -955,17 +873,15 @@
 
     if (hookedFish && state === ST.HOOKED){
       drawFish(hookedFish);
-      const dx = (hookedFish.x - hook.x);
-      const dy = (hookedFish.y - hook.y);
-      hookedFish.x -= dx * 0.002 * dt;
-      hookedFish.y -= dy * 0.002 * dt;
     }
 
     drawRodAndLine();
     drawHUD();
+
     requestAnimationFrame(tick);
   }
 
+  // start
   setState(ST.IDLE);
   updateTensionUI();
   updateUI();
