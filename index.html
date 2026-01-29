@@ -914,45 +914,52 @@
       }
     }
     else if (state === ST.HOOKED){
-      const pullBase = (targetType === "gold") ? 0.0022 : (targetType === "fishB") ? 0.0020 : 0.0018;
-      const pullVar  = (targetType === "gold") ? 0.0029 : (targetType === "fishB") ? 0.0026 : 0.0024;
+    // ===== ✅ FIX: กด Reel แล้วปลา/เบ็ดขึ้นจริง =====
+
+    // 1) แรงปลา (เพิ่ม tension แบบคุมได้)
+      const pullBase = (targetType === "gold") ? 0.0019 : (targetType === "fishB") ? 0.0017 : 0.0015;
+      const pullVar  = (targetType === "gold") ? 0.0022 : (targetType === "fishB") ? 0.0020 : 0.0018;
       fishPull = (Math.sin(now/220) * 0.5 + 0.5) * pullVar + pullBase;
 
-      const relax = 0.00055;
+      const relax = 0.00075;
 
-      tension += fishPull * dt * 0.34;
-      tension += (reelHeld ? 0.00023 : 0.00005) * dt;
-      tension -= relax * dt * 1.20;
-
+  // tension: ปลาดึงให้ตึง + กด reel ตึงขึ้นนิด (เพื่อบาลานซ์ไม่ง่ายไป)
+      tension += fishPull * dt * 0.28;
+      tension += (reelHeld ? 0.00045 : 0.00006) * dt;
+      tension -= relax * dt;
       tension = Math.max(0, Math.min(1.2, tension));
 
+  // 2) ✅ ยกเบ็ด: เพิ่มแรงยกตอนกด Reel (หัวใจของปัญหา)
+      const reelLift = reelHeld ? 0.0032 : 0.00055;   // เดิม 0.00155 อ่อนเกินบนหลายเครื่อง
+      if (reelHeld){
+        hook.y -= reelLift * dt * (1.0 - tension * 0.35);
+      } else {
+        hook.y += 0.00085 * dt;                       // ปล่อยแล้วค่อย ๆ จม
+      }
+      hook.y = Math.max(rod.y - 12, Math.min(canvas.height - 30, hook.y));
+
+  // 3) ✅ ให้ "ปลา" ตามเบ็ดขึ้นมาชัด ๆ (จะเห็นปลาขึ้น)
       if (hookedFish){
+        const follow = reelHeld ? 0.030 : 0.016;      // กด Reel -> ตามเร็วขึ้น
+        hookedFish.x += (hook.x - hookedFish.x) * follow * (dt/16);
+        hookedFish.y += (hook.y - hookedFish.y) * follow * (dt/16);
+
         hookedFish.bob += dt/500;
-        hookedFish.x += (targetType === "gold" ? 0.6 : 0.5) * (dt/5);
-        hookedFish.y += Math.sin(hookedFish.bob) * 0.35;
-
-        const pullTo = (reelHeld ? 1.0 : 0.5);
-        hookedFish.x -= pullTo * (dt/6);
-
+        hookedFish.y += Math.sin(hookedFish.bob) * 0.25;
+  
         hookedFish.y = Math.max(waterLine()+40, Math.min(canvas.height-40, hookedFish.y));
       }
 
-      const reelLift = reelHeld ? 0.00155 : 0.00055;
-      if (reelHeld){
-        hook.y -= reelLift * dt * (1.0 - tension*0.30);
-      } else {
-        hook.y += 0.00075 * dt;
-      }
-      hook.y = Math.max(rod.y - 5, Math.min(canvas.height-30, hook.y));
-
-      if (tension >= 0.97){
+  // 4) สายขาด / จับได้
+      if (tension >= 0.98){
         breakLine();
-      } else if (hook.y <= rod.y + 10 || hook.y <= waterLine() + 60){
+      } else if (hook.y <= rod.y + 22){               // ✅ จับได้เมื่อขึ้นถึงคันเบ็ดจริง ๆ
         landed();
       }
 
       updateTensionUI();
     }
+
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawSea();
