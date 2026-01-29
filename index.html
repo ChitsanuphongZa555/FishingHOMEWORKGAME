@@ -53,7 +53,7 @@
       height:auto;
       border-radius:12px;
       border:1px solid var(--border);
-      background: linear-gradient(180deg, #001629 0%, #043a61 50%, #0a78b8 100%);
+      background: transparent;
       display:block;
       touch-action: manipulation;
     }
@@ -297,6 +297,26 @@
   // ===== Canvas setup =====
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  // ===== Background image =====
+const bgImg = new Image();
+bgImg.src = "bg-water.png";   // <-- ชื่อไฟล์รูปที่เซฟไว้
+let bgReady = false;
+bgImg.onload = () => { bgReady = true; };
+bgImg.onerror = () => { console.warn("โหลดพื้นหลังไม่สำเร็จ: bg-water.png"); };
+
+// วาดรูปแบบ cover ให้เต็ม canvas (ไม่ยืดเบี้ยว)
+function drawCover(ctx, img, x, y, w, h){
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return;
+
+  const s = Math.max(w / iw, h / ih);
+  const nw = iw * s, nh = ih * s;
+  const nx = x + (w - nw) / 2;
+  const ny = y + (h - nh) / 2;
+  ctx.drawImage(img, nx, ny, nw, nh);
+}
+
 
   function fitCanvas() {
     const cssW = canvas.clientWidth || 900;
@@ -667,25 +687,40 @@
   }
 
   function drawSea(){
-    const g = ctx.createRadialGradient(canvas.width*0.7, canvas.height*0.05, 10, canvas.width*0.7, canvas.height*0.05, canvas.width*0.6);
-    g.addColorStop(0, "rgba(255,255,255,0.12)");
-    g.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = g;
+  // 1) วาดพื้นหลังเป็นรูป
+  if (bgReady){
+    drawCover(ctx, bgImg, 0, 0, canvas.width, canvas.height);
+  } else {
+    // fallback ระหว่างรอรูปโหลด
+    const gg = ctx.createLinearGradient(0,0,0,canvas.height);
+    gg.addColorStop(0, "#001629");
+    gg.addColorStop(0.6, "#043a61");
+    gg.addColorStop(1, "#0a78b8");
+    ctx.fillStyle = gg;
     ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    ctx.fillStyle = "rgba(255,255,255,0.07)";
-    ctx.fillRect(0, waterLine()-2, canvas.width, 2);
-
-    for(let i=0;i<6;i++){
-      const x = (i*0.17 + (Date.now()/5000)%1) * canvas.width;
-      const y = waterLine() + canvas.height*(0.2 + (i*0.11)%0.6);
-      ctx.beginPath();
-      ctx.arc(x, y, 6 + (i%3), 0, Math.PI*2);
-      ctx.strokeStyle = "rgba(255,255,255,0.12)";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    }
   }
+
+  // 2) ใส่แสง/ฟองเพิ่มนิดให้ยังดูเป็นเกม
+  const g = ctx.createRadialGradient(canvas.width*0.7, canvas.height*0.05, 10, canvas.width*0.7, canvas.height*0.05, canvas.width*0.6);
+  g.addColorStop(0, "rgba(255,255,255,0.10)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.fillRect(0, waterLine()-2, canvas.width, 2);
+
+  for(let i=0;i<6;i++){
+    const x = (i*0.17 + (Date.now()/5000)%1) * canvas.width;
+    const y = waterLine() + canvas.height*(0.2 + (i*0.11)%0.6);
+    ctx.beginPath();
+    ctx.arc(x, y, 6 + (i%3), 0, Math.PI*2);
+    ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
 
   function drawRodAndLine(){
     ctx.lineCap = "round";
